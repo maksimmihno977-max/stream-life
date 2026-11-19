@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,5 +9,19 @@
 <body>
     <h1>Phone Chat</h1>
     <p>Stream Life — чат зрителей</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://izwtsyuchncgivbjgfbk.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9dO-ucb1_4uJIkTZn5BJvw_LRLZ_YbG";
+
+        const supabaseClient = supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY
+        );
+
+        console.log("Supabase подключён");
+    </script>
 </body>
 </html>
