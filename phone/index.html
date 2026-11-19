@@ -2,26 +2,119 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phone Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stream Life — Phone Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101116;color:#fff;font-family:Arial;height:100dvh;display:flex;flex-direction:column}
+header{padding:18px;background:#191b24;border-bottom:1px solid #30323c}
+h2{margin:0}
+#status{font-size:12px;color:#e5b65c;margin-top:6px}
+#messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.message{background:#20232e;border:1px solid #303442;border-radius:12px;padding:12px;overflow-wrap:anywhere}
+.nickname{color:#78aaff;font-weight:bold;font-size:13px;margin-bottom:6px}
+.content{font-size:15px;white-space:pre-wrap}
+.time{color:#858997;font-size:10px;margin-top:7px}
+.empty{color:#858997;text-align:center;margin:auto}
+footer{padding:12px;background:#191b24;border-top:1px solid #30323c}
+input{width:100%;padding:13px;border-radius:9px;border:1px solid #343846;background:#252834;color:white;font-size:14px;outline:none}
+#nickname{margin-bottom:9px}
+.send-row{display:flex;gap:8px}
+#message{flex:1;min-width:0}
+button{border:0;border-radius:9px;background:#3979e8;color:white;font-weight:bold;padding:0 17px}
+</style>
 </head>
 <body>
-    <h1>Phone Chat</h1>
-    <p>Stream Life — чат зрителей</p>
+<header>
+<h2>Stream Life</h2>
+<div id="status">Подключение...</div>
+</header>
+<main id="messages"><div class="empty">Загрузка чата...</div></main>
+<footer>
+<input id="nickname" maxlength="24" placeholder="Твой никнейм">
+<div class="send-row">
+<input id="message" maxlength="1000" placeholder="Написать сообщение...">
+<button id="send">Отправить</button>
+</div>
+</footer>
+<script>
+const SUPABASE_URL="https://izwtsyuchncgivbjgfbk.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_9dO-ucb1_4uJIkTZn5BJvw_LRLZ_YbG";
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const box=document.getElementById("messages");
+const nickname=document.getElementById("nickname");
+const message=document.getElementById("message");
+const send=document.getElementById("send");
+const status=document.getElementById("status");
+let known=new Set();
 
-    <script>
-        const SUPABASE_URL = "https://izwtsyuchncgivbjgfbk.supabase.co";
-        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9dO-ucb1_4uJIkTZn5BJvw_LRLZ_YbG";
+nickname.value=localStorage.getItem("streamlife_nickname")||"";
+nickname.addEventListener("input",()=>localStorage.setItem("streamlife_nickname",nickname.value));
 
-        const supabaseClient = supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_PUBLISHABLE_KEY
-        );
+function displayMessage(msg){
+ if(known.has(msg.id))return;
+ known.add(msg.id);
+ const card=document.createElement("div");
+ card.className="message";
+ const name=document.createElement("div");
+ name.className="nickname";
+ name.textContent=msg.nickname;
+ const content=document.createElement("div");
+ content.className="content";
+ content.textContent=msg.content;
+ const time=document.createElement("div");
+ time.className="time";
+ time.textContent=new Date(msg.created_at).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+ card.append(name,content,time);
+ box.querySelector(".empty")?.remove();
+ box.appendChild(card);
+ box.scrollTop=box.scrollHeight;
+}
 
-        console.log("Supabase подключён");
-    </script>
+async function loadMessages(){
+ const {data,error}=await db.from("messages").select("*").order("created_at",{ascending:false}).limit(100);
+ if(error){
+  status.textContent="Ошибка загрузки";
+  box.innerHTML='<div class="empty">Не удалось загрузить чат</div>';
+  console.error(error);
+  return;
+ }
+ box.innerHTML="";
+ known.clear();
+ data.reverse().forEach(displayMessage);
+ if(!data.length)box.innerHTML='<div class="empty">Пока сообщений нет</div>';
+}
+
+db.channel("stream-life-messages")
+.on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>displayMessage(payload.new))
+.subscribe(state=>{
+ if(state==="SUBSCRIBED"){
+  status.textContent="● В сети";
+  status.style.color="#55d68a";
+ }else if(state==="CHANNEL_ERROR"||state==="TIMED_OUT"){
+  status.textContent="Ошибка подключения";
+  status.style.color="#ff6666";
+ }
+});
+
+async function sendMessage(){
+ const nick=nickname.value.trim();
+ const text=message.value.trim();
+ if(!nick){alert("Введи никнейм");return}
+ if(!text)return;
+ send.disabled=true;
+ const {error}=await db.from("messages").insert({nickname:nick,content:text});
+ send.disabled=false;
+ if(error){alert("Ошибка отправки: "+error.message);return}
+ message.value="";
+ message.focus();
+}
+send.addEventListener("click",sendMessage);
+message.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage()});
+loadMessages();
+</script>
 </body>
 </html>
