@@ -4,117 +4,309 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Life — Phone Chat</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Stream Life — Live Chat</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101116;color:#fff;font-family:Arial;height:100dvh;display:flex;flex-direction:column}
-header{padding:18px;background:#191b24;border-bottom:1px solid #30323c}
-h2{margin:0}
-#status{font-size:12px;color:#e5b65c;margin-top:6px}
-#messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.message{background:#20232e;border:1px solid #303442;border-radius:12px;padding:12px;overflow-wrap:anywhere}
-.nickname{color:#78aaff;font-weight:bold;font-size:13px;margin-bottom:6px}
-.content{font-size:15px;white-space:pre-wrap}
-.time{color:#858997;font-size:10px;margin-top:7px}
-.empty{color:#858997;text-align:center;margin:auto}
-footer{padding:12px;background:#191b24;border-top:1px solid #30323c}
-input{width:100%;padding:13px;border-radius:9px;border:1px solid #343846;background:#252834;color:white;font-size:14px;outline:none}
-#nickname{margin-bottom:9px}
-.send-row{display:flex;gap:8px}
-#message{flex:1;min-width:0}
-button{border:0;border-radius:9px;background:#3979e8;color:white;font-weight:bold;padding:0 17px}
+body{margin:0;background:#090a0e;color:#eee;font-family:Arial,sans-serif;height:100dvh;display:flex;flex-direction:column}
+header{background:#15171e;padding:15px 17px;border-bottom:1px solid #292c35}
+.top{display:flex;align-items:center;justify-content:space-between}
+h2{font-size:19px;margin:0}
+.live{color:#ff5555;font-size:12px;font-weight:bold}
+.stats{font-size:12px;color:#999;margin-top:9px}
+#chat{flex:1;overflow-y:auto;padding:12px 13px;display:flex;flex-direction:column;gap:10px}
+.msg{font-size:14px;line-height:1.4;overflow-wrap:anywhere;animation:appear .18s ease}
+.name{font-weight:bold;margin-right:5px}
+.text{color:#e4e4e8}
+.system{text-align:center;color:#777;font-size:12px;padding:8px}
+footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#777;font-size:11px}
+@keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
+
 <header>
-<h2>Stream Life</h2>
-<div id="status">Подключение...</div>
-</header>
-<main id="messages"><div class="empty">Загрузка чата...</div></main>
-<footer>
-<input id="nickname" maxlength="24" placeholder="Твой никнейм">
-<div class="send-row">
-<input id="message" maxlength="1000" placeholder="Написать сообщение...">
-<button id="send">Отправить</button>
+<div class="top">
+<h2>STREAM LIFE</h2>
+<span class="live">● LIVE</span>
 </div>
-</footer>
+<div class="stats">
+<span id="viewers">1 284</span> зрителей · <span id="online">87</span> в чате
+</div>
+</header>
+
+<main id="chat">
+<div class="system">Подключение зрителей...</div>
+</main>
+
+<footer>Чат трансляции · Сообщения генерируются автоматически</footer>
+
 <script>
-const SUPABASE_URL="https://izwtsyuchncgivbjgfbk.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_9dO-ucb1_4uJIkTZn5BJvw_LRLZ_YbG";
+const chat=document.getElementById("chat");
+const viewers=document.getElementById("viewers");
+const online=document.getElementById("online");
 
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-const box=document.getElementById("messages");
-const nickname=document.getElementById("nickname");
-const message=document.getElementById("message");
-const send=document.getElementById("send");
-const status=document.getElementById("status");
-let known=new Set();
+const names=[
+"shadow","Keksik","Demon_228","MisterFox","vlad_ua",
+"NightWolf","Limon","Maxwell","qwerty","oldman",
+"PixelBoy","kira","neon","darkside","Bublik",
+"Frost","Mafia","Toxic","Raketa","Sanya"
+];
 
-nickname.value=localStorage.getItem("streamlife_nickname")||"";
-nickname.addEventListener("input",()=>localStorage.setItem("streamlife_nickname",nickname.value));
+const colors=[
+"#75aaff","#e5b84f","#e85c65","#55c5a5",
+"#c28aff","#d77baf","#58c9dc","#7cc77d"
+];
 
-function displayMessage(msg){
- if(known.has(msg.id))return;
- known.add(msg.id);
- const card=document.createElement("div");
- card.className="message";
- const name=document.createElement("div");
- name.className="nickname";
- name.textContent=msg.nickname;
- const content=document.createElement("div");
- content.className="content";
- content.textContent=msg.content;
- const time=document.createElement("div");
- time.className="time";
- time.textContent=new Date(msg.created_at).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
- card.append(name,content,time);
- box.querySelector(".empty")?.remove();
- box.appendChild(card);
- box.scrollTop=box.scrollHeight;
+const streamerNames=["Макс","Максим","Сицилия"];
+
+const personalities=[
+{type:"memer",chance:25},
+{type:"normal",chance:25},
+{type:"toxic",chance:15},
+{type:"active",chance:15},
+{type:"quiet",chance:10},
+{type:"newbie",chance:10}
+];
+
+const phrases={
+memer:[
+"АХАХАХАХАХА",
+"ОРУУУУ",
+"ХАХАХАХА ЧТО",
+"я не могу просто",
+"это было сильно ахах",
+"ХВХВХВХВХ",
+"ну всё приехали",
+"бля ахахах",
+"ахахах ну хорош"
+],
+normal:[
+"игра вроде норм",
+"а мне нравится если честно",
+"ребят кто давно смотрит?",
+"что сейчас произошло?",
+"нормально вообще",
+"я только зашел",
+"кто-нибудь понял что происходит?",
+"интересно чем закончится",
+"музыка прикольная кстати"
+],
+toxic:[
+"бля ну куда ты пошел",
+"ну это вообще что было",
+"ты серьезно сейчас?",
+"да ну нахер ахах",
+"брат ну соберись",
+"это был худший момент",
+"я в шоке с тебя",
+"ну ты и выдал конечно",
+"ДА КАК ТАК МОЖНО"
+],
+active:[
+"МАКС СЛЕВА",
+"посмотри назад",
+"ДА ДА ДА",
+"НЕЕЕЕТ АХАХА",
+"вот сейчас будет интересно",
+"МАКС НЕ НАДО",
+"ЧАТ ВИДЕЛИ ЭТО?",
+"го еще раз",
+"ВОТ ЭТО ПОВОРОТ"
+],
+quiet:[
+"ахах",
+"жесть",
+"понятно)",
+"ого",
+"хах",
+"ну да",
+"бывает",
+"лол",
+"кек"
+],
+newbie:[
+"а что за игра?",
+"только зашел что происходит",
+"сколько стриму уже?",
+"а это прохождение?",
+"привет всем",
+"Макс давно играешь в это?",
+"кто-нибудь объяснит?"
+]
+};
+
+const streamerPhrases=[
+"Макс, ну куда ты пошел?",
+"Максим, ты это видел вообще?",
+"Сицилия, посмотри назад",
+"Макс, ответь чату",
+"ахахах Максим ну ты даешь",
+"Сицилия, это что сейчас было",
+"Макс, НЕ ТУДА",
+"Максим, я тебе уже писал",
+"ну Макс конечно",
+"Сицилия ахахахах",
+"Макс, ты серьезно?",
+"Максим, соберись",
+"Макс, куда ты бежишь блять",
+"Сицилия, ну хорош",
+"Макс, чат в шоке"
+];
+
+const reactions=[
+"@NAME ахахах",
+"@NAME да я тоже заметил",
+"@NAME ну ты прав",
+"@NAME да ладно тебе",
+"@NAME ХАХАХА",
+"@NAME не согласен вообще",
+"@NAME +++",
+"@NAME вот именно",
+"@NAME ты о чем вообще",
+"@NAME хорош"
+];
+
+const spam=[
+"ХАХАХАХАХАХАХА",
+"ЫВХЫВХЫВХЫВ",
+"ПХАХАХАХАХ",
+"????????????",
+"ЧТООООООО",
+"))))))))))))",
+"КЕКЕКЕКЕК",
+"ЛОООООООЛ",
+"ДА БЛЯЯЯЯ",
+"ахахахахахахах"
+];
+
+let people=[];
+let lastSpeaker=null;
+let messageCount=0;
+
+function random(arr){
+ return arr[Math.floor(Math.random()*arr.length)];
 }
 
-async function loadMessages(){
- const {data,error}=await db.from("messages").select("*").order("created_at",{ascending:false}).limit(100);
- if(error){
-  status.textContent="Ошибка загрузки";
-  box.innerHTML='<div class="empty">Не удалось загрузить чат</div>';
-  console.error(error);
-  return;
+function makePeople(){
+ people=names.map((name,i)=>({
+  name,
+  color:random(colors),
+  personality:random(personalities).type,
+  activity:Math.random()
+ }));
+}
+
+function addMessage(name,color,text){
+ const item=document.createElement("div");
+ item.className="msg";
+
+ const nick=document.createElement("span");
+ nick.className="name";
+ nick.style.color=color;
+ nick.textContent=name+":";
+
+ const content=document.createElement("span");
+ content.className="text";
+ content.textContent=" "+text;
+
+ item.append(nick,content);
+ chat.appendChild(item);
+
+ messageCount++;
+
+ while(chat.children.length>100){
+  chat.removeChild(chat.firstChild);
  }
- box.innerHTML="";
- known.clear();
- data.reverse().forEach(displayMessage);
- if(!data.length)box.innerHTML='<div class="empty">Пока сообщений нет</div>';
+
+ chat.scrollTop=chat.scrollHeight;
 }
 
-db.channel("stream-life-messages")
-.on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>displayMessage(payload.new))
-.subscribe(state=>{
- if(state==="SUBSCRIBED"){
-  status.textContent="● В сети";
-  status.style.color="#55d68a";
- }else if(state==="CHANNEL_ERROR"||state==="TIMED_OUT"){
-  status.textContent="Ошибка подключения";
-  status.style.color="#ff6666";
+function getPerson(){
+ let available=people.filter(p=>Math.random()<p.activity+0.15);
+
+ if(!available.length)available=people;
+
+ let person=random(available);
+
+ if(lastSpeaker&&Math.random()<0.35){
+  const others=available.filter(p=>p!==lastSpeaker);
+  if(others.length)person=random(others);
  }
-});
 
-async function sendMessage(){
- const nick=nickname.value.trim();
- const text=message.value.trim();
- if(!nick){alert("Введи никнейм");return}
- if(!text)return;
- send.disabled=true;
- const {error}=await db.from("messages").insert({nickname:nick,content:text});
- send.disabled=false;
- if(error){alert("Ошибка отправки: "+error.message);return}
- message.value="";
- message.focus();
+ lastSpeaker=person;
+ return person;
 }
-send.addEventListener("click",sendMessage);
-message.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage()});
-loadMessages();
+
+function createMessage(person){
+ const type=person.personality;
+ let text;
+
+ if(Math.random()<0.18){
+  text=random(streamerPhrases);
+ }
+ else if(Math.random()<0.16){
+  text=random(spam);
+ }
+ else{
+  text=random(phrases[type]);
+ }
+
+ if(Math.random()<0.16){
+  const other=random(people);
+  if(other!==person){
+   text=random(reactions).replace("NAME",other.name);
+  }
+ }
+
+ if(Math.random()<0.10){
+  text=random(phrases.memer);
+ }
+
+ return text;
+}
+
+function sendRandomMessage(){
+ const person=getPerson();
+ addMessage(person.name,person.color,createMessage(person));
+}
+
+function updateStats(){
+ let count=1284+Math.floor(Math.random()*90)-30;
+ viewers.textContent=count.toLocaleString("ru-RU");
+ online.textContent=(65+Math.floor(Math.random()*50));
+}
+
+function nextMessage(){
+ sendRandomMessage();
+
+ let delay=500+Math.random()*1900;
+
+ if(Math.random()<0.15){
+  delay=150+Math.random()*400;
+ }
+
+ if(Math.random()<0.12){
+  delay=2500+Math.random()*2500;
+ }
+
+ setTimeout(nextMessage,delay);
+}
+
+function start(){
+ makePeople();
+ chat.innerHTML="";
+ addMessage("StreamLife","#ff7777","Чат подключен. Всем привет!");
+ updateStats();
+
+ for(let i=0;i<7;i++){
+  setTimeout(sendRandomMessage,i*350);
+ }
+
+ setInterval(updateStats,7000);
+ setTimeout(nextMessage,1800);
+}
+
+start();
 </script>
 </body>
 </html>
