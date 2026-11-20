@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -6,49 +7,89 @@
 <title>Stream Life — Live Chat</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#090a0e;color:#eee;font-family:Arial,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#15171e;padding:15px 17px;border-bottom:1px solid #292c35;flex-shrink:0}
+:root{--bg:#0e0e10;--panel:#18181b;--line:#303036;--text:#efeff1;--muted:#adadb8;--purple:#9147ff}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--panel);padding:13px 15px;border-bottom:1px solid var(--line);flex-shrink:0}
 .top{display:flex;align-items:center;justify-content:space-between}
-h2{font-size:19px;margin:0}
-.live{color:#ff5555;font-size:12px;font-weight:bold}
-.stats{font-size:12px;color:#999;margin-top:9px}
+h2{font-size:18px;margin:0;letter-spacing:.5px}
+.live{color:#eb4646;font-size:12px;font-weight:bold}
+.stats{font-size:12px;color:var(--muted);margin-top:8px}
 .chat-area{position:relative;flex:1;min-height:0}
-#chat{height:100%;overflow-y:auto;overscroll-behavior:contain;padding:12px 13px 18px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:#414552 transparent}
-.msg{font-size:14px;line-height:1.4;overflow-wrap:anywhere;animation:appear .18s ease}
-.name{font-weight:bold;margin-right:5px}
-.text{color:#e4e4e8}
-.system{text-align:center;color:#777;font-size:12px;padding:8px}
-footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#777;font-size:11px;flex-shrink:0}
-#newMessages{display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;border:1px solid #565d70;border-radius:22px;background:#303747;color:#fff;padding:11px 17px;font-size:13px;font-weight:bold;box-shadow:0 4px 18px #0009;white-space:nowrap;max-width:calc(100% - 24px)}
-#newMessages:active{background:#414c63}
-@keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+#chat{height:100%;overflow-y:auto;overscroll-behavior:contain;padding:11px 12px 18px;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin;scrollbar-color:#41414b transparent}
+.msg{font-size:14px;line-height:1.5;overflow-wrap:anywhere;animation:appear .16s ease}
+.name{font-weight:700;margin-right:5px;cursor:pointer}
+.name:hover{text-decoration:underline}
+.text{color:#efeff1;white-space:pre-wrap}
+.badges{display:inline-flex;align-items:center;gap:3px;margin-right:4px;vertical-align:middle}
+.badge-icon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
+.badge-icon svg{width:100%;height:100%}
+.gift-badge{font-size:14px;line-height:17px}
+.verified{color:#b58cff;font-size:17px;font-weight:bold}
+.system{text-align:center;color:#888;font-size:12px;padding:9px}
+.notice{background:#24242b;border-left:3px solid #9147ff;border-radius:4px;padding:10px 11px;margin:5px 0;animation:appear .25s ease}
+.notice-title{font-size:14px;font-weight:bold;color:#e1caff;margin-bottom:4px}
+.notice-text{font-size:12px;color:#ccc}
+.gift-banner{background:linear-gradient(110deg,#302044,#211b32);border:1px solid #7043a5;border-radius:7px;padding:12px;margin:5px 0;animation:banner .4s ease}
+.gift-banner .gift-title{font-size:15px;font-weight:bold;color:#e4c6ff}
+.gift-banner .gift-sub{font-size:12px;color:#c8b7d9;margin-top:5px}
+.gift-banner.big{background:linear-gradient(110deg,#493019,#30203c);border-color:#c58b40}
+.gift-banner.big .gift-title{color:#ffdc9a}
+.gift-row{display:flex;align-items:center;gap:8px}
+.gift-symbol{font-size:25px}
+footer{background:var(--panel);border-top:1px solid var(--line);padding:10px 14px;color:#888;font-size:11px;flex-shrink:0}
+#newMessages{display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;border:1px solid #7653a8;border-radius:22px;background:#39245a;color:#fff;padding:10px 17px;font-size:13px;font-weight:bold;box-shadow:0 4px 18px #0009;white-space:nowrap}
+#profile{display:none;position:absolute;z-index:10;left:12px;right:12px;bottom:65px;background:#242429;border:1px solid #555560;border-radius:9px;padding:15px;box-shadow:0 8px 30px #000b}
+.profile-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.profile-name{font-size:16px;font-weight:bold}
+.profile-info{font-size:12px;color:#aaa;margin-bottom:12px}
+.profile-actions{display:flex;gap:8px;flex-wrap:wrap}
+.profile-actions button{border:0;border-radius:5px;padding:9px 12px;background:#9147ff;color:white;font-weight:bold}
+.profile-actions .close{background:#414149}
+.profile-actions .remove{background:#a93e52}
+@keyframes appear{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes banner{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
 </style>
 </head>
 <body>
+
 <header>
-<div class="top">
-<h2>STREAM LIFE</h2>
-<span class="live">● LIVE</span>
-</div>
-<div class="stats">
-<span id="viewers">1 284</span> зрителей · <span id="online">87</span> в чате
-</div>
+ <div class="top">
+  <h2>STREAM LIFE</h2>
+  <span class="live">● LIVE</span>
+ </div>
+ <div class="stats">
+  <span id="viewers">1 284</span> зрителей ·
+  <span id="online">87</span> в чате
+ </div>
 </header>
 
 <div class="chat-area">
-<main id="chat">
-<div class="system">Подключение зрителей...</div>
-</main>
-<button id="newMessages" type="button">↓ Новых сообщений: 0</button>
+ <main id="chat">
+  <div class="system">Подключение зрителей...</div>
+ </main>
+ <button id="newMessages">↓ Новых сообщений: 0</button>
+
+ <div id="profile">
+  <div class="profile-top">
+   <span class="profile-name" id="profileName"></span>
+   <span id="profileBadges"></span>
+  </div>
+  <div class="profile-info" id="profileInfo"></div>
+  <div class="profile-actions">
+   <button id="vipButton">Назначить VIP</button>
+   <button id="closeProfile" class="close">Закрыть</button>
+  </div>
+ </div>
 </div>
 
-<footer>Чат трансляции · Сообщения генерируются автоматически</footer>
+<footer>Чат трансляции · Stream Life</footer>
 
 <script>
 const chat=document.getElementById("chat");
 const viewers=document.getElementById("viewers");
 const online=document.getElementById("online");
 const newMessagesButton=document.getElementById("newMessages");
+
 const names=[
 "shadow","Keksik","Demon_228","MisterFox","vlad_ua",
 "NightWolf","Limon","Maxwell","qwerty","oldman",
@@ -62,6 +103,13 @@ const colors=[
 ];
 
 const streamerNames=["Макс","Максим","Сицилия"];
+
+const knownStreamers=[
+"limefixdive","rostikfacekid","clean_killl",
+"SANYAXAΚΕΡ","zxcursed","mokrivskyi","Murzofix",
+"sasavot","kopsteep","morphe_ya","dangerlyoha"
+];
+
 const personalities=[
 {type:"memer",chance:25},
 {type:"normal",chance:25},
@@ -70,58 +118,147 @@ const personalities=[
 {type:"quiet",chance:10},
 {type:"newbie",chance:10}
 ];
+
 const phrases={
 memer:[
-"АХАХАХАХАХА","ОРУУУУ","ХАХАХАХА ЧТО","я не могу просто",
-"это было сильно ахах","ХВХВХВХВХ","ну всё приехали","бля ахахах","ахахах ну хорош"
+"АХАХАХАХАХА","ОРУУУУ","ХАХАХАХА ЧТО",
+"я не могу просто","это было сильно ахах",
+"ХВХВХВХВХ","ну всё приехали","бля ахахах",
+"ахахах ну хорош","ПХАХАХАХ"
 ],
 normal:[
-"игра вроде норм","а мне нравится если честно","ребят кто давно смотрит?",
-"что сейчас произошло?","нормально вообще","я только зашел","кто-нибудь понял что происходит?",
-"интересно чем закончится","музыка прикольная кстати"
+"игра вроде норм","а мне нравится если честно",
+"ребят кто давно смотрит?","что сейчас произошло?",
+"нормально вообще","я только зашел",
+"кто-нибудь понял что происходит?",
+"интересно чем закончится","музыка прикольная кстати",
+"Макс, а что дальше?"
 ],
 toxic:[
-"бля ну куда ты пошел","ну это вообще что было","ты серьезно сейчас?",
-"да ну нахер ахах","брат ну соберись","это был худший момент","я в шоке с тебя",
-"ну ты и выдал конечно","ДА КАК ТАК МОЖНО"
+"бля ну куда ты пошел","ну это вообще что было",
+"ты серьезно сейчас?","да ну нахер ахах",
+"брат ну соберись","это был худший момент",
+"я в шоке с тебя","ну ты и выдал конечно",
+"ДА КАК ТАК МОЖНО"
 ],
 active:[
-"МАКС СЛЕВА","посмотри назад","ДА ДА ДА","НЕЕЕЕТ АХАХА",
-"вот сейчас будет интересно","МАКС НЕ НАДО","ЧАТ ВИДЕЛИ ЭТО?","го еще раз","ВОТ ЭТО ПОВОРОТ"
+"МАКС СЛЕВА","посмотри назад","ДА ДА ДА",
+"НЕЕЕЕТ АХАХА","вот сейчас будет интересно",
+"МАКС НЕ НАДО","ЧАТ ВИДЕЛИ ЭТО?",
+"го еще раз","ВОТ ЭТО ПОВОРОТ"
 ],
-quiet:["ахах","жесть","понятно)","ого","хах","ну да","бывает","лол","кек"],
+quiet:["ахах","жесть","понятно)","ого","хах",
+"ну да","бывает","лол","кек"],
 newbie:[
-"а что за игра?","только зашел что происходит","сколько стриму уже?",
-"а это прохождение?","привет всем","Макс давно играешь в это?","кто-нибудь объяснит?"
+"а что за игра?","только зашел что происходит",
+"сколько стриму уже?","а это прохождение?",
+"привет всем","Макс давно играешь в это?",
+"кто-нибудь объяснит?"
 ]
 };
+
 const streamerPhrases=[
-"Макс, ну куда ты пошел?","Максим, ты это видел вообще?","Сицилия, посмотри назад",
-"Макс, ответь чату","ахахах Максим ну ты даешь","Сицилия, это что сейчас было",
-"Макс, НЕ ТУДА","Максим, я тебе уже писал","ну Макс конечно","Сицилия ахахахах",
-"Макс, ты серьезно?","Максим, соберись","Макс, куда ты бежишь блять",
-"Сицилия, ну хорош","Макс, чат в шоке"
-];
-const reactions=[
-"@NAME ахахах","@NAME да я тоже заметил","@NAME ну ты прав","@NAME да ладно тебе",
-"@NAME ХАХАХА","@NAME не согласен вообще","@NAME +++","@NAME вот именно",
-"@NAME ты о чем вообще","@NAME хорош"
-];
-const spam=[
-"ХАХАХАХАХАХАХА","ЫВХЫВХЫВХЫВ","ПХАХАХАХАХ","????????????",
-"ЧТООООООО","))))))))))))","КЕКЕКЕКЕК","ЛОООООООЛ","ДА БЛЯЯЯЯ","ахахахахахахах"
+"Макс, ну куда ты пошел?","Максим, ты это видел вообще?",
+"Сицилия, посмотри назад","Макс, ответь чату",
+"ахахах Максим ну ты даешь","Сицилия, это что сейчас было",
+"Макс, НЕ ТУДА","Максим, я тебе уже писал",
+"ну Макс конечно","Сицилия ахахахах",
+"Макс, ты серьезно?","Максим, соберись",
+"Макс, куда ты бежишь блять","Сицилия, ну хорош",
+"Макс, чат в шоке"
 ];
 
-let people=[];
+const reactions=[
+"@NAME ахахах","@NAME да я тоже заметил",
+"@NAME ну ты прав","@NAME да ладно тебе",
+"@NAME ХАХАХА","@NAME не согласен вообще",
+"@NAME +++","@NAME вот именно",
+"@NAME ты о чем вообще","@NAME хорош"
+];
+
+const spam=[
+"ХАХАХАХАХАХАХА","ЫВХЫВХЫВХЫВ",
+"ПХАХАХАХАХ","????????????",
+"ЧТООООООО","))))))))))))",
+"КЕКЕКЕКЕК","ЛОООООООЛ","ДА БЛЯЯЯЯ",
+"ахахахахахахах"
+];
+
+const moderatorNames=["Mod_Sasha","NightMod","ChatKeeper"];
+
+const moderatorPhrases=[
+"Ребят, следим за чатом!",
+"Макс, проверь уровень микрофона.",
+"Напоминаю, не спамим одинаковыми сообщениями.",
+"Если звук двоится, проверь, не включён ли второй источник аудио.",
+"Чат, всем хорошего просмотра!",
+"Макс, у тебя немного отстаёт звук.",
+"Ребят, не забываем общаться нормально.",
+"Проверь синхронизацию звука и изображения.",
+"Не отправляйте одинаковые сообщения подряд."
+];
+
+const advicePhrases=[
+"Макс, звук немного отстаёт от картинки.",
+"Проверь, не включён ли одновременно микрофон и звук с виртуального устройства.",
+"Кажется, картинка немного задерживается.",
+"Макс, попробуй проверить синхронизацию аудио.",
+"У тебя звук как будто немного двоится.",
+"Проверь настройки источников звука.",
+"Чат, кажется, у Макса небольшая задержка трансляции."
+];
+
+const giftLevels=[
+{n:1,w:12},{n:5,w:18},{n:10,w:30},
+{n:25,w:15},{n:50,w:10},{n:100,w:8},
+{n:150,w:3},{n:250,w:2},{n:500,w:1.3},
+{n:1000,w:.6},{n:2000,w:.3},
+{n:3000,w:.15},{n:4000,w:.07},{n:5000,w:.02}
+];
+
+const modBadge=`
+<svg viewBox="0 0 20 20" aria-label="Модератор">
+ <circle cx="10" cy="10" r="9" fill="#168b54"/>
+ <path d="M6 3 L8 3 L10 8 L13 5 L15 6 L11 11 L14 16 L11 16 L8 12 L6 15 L4 14 L8 9 Z" fill="white"/>
+</svg>`;
+
+const vipBadge=`
+<svg viewBox="0 0 20 20" aria-label="VIP">
+ <path d="M10 1 L18 10 L10 19 L2 10 Z" fill="#e66bc5"/>
+ <path d="M10 5 L12 10 L10 15 L8 10 Z" fill="white"/>
+</svg>`;
+
+const subBadge=level=>`
+<svg viewBox="0 0 20 20" aria-label="Подарочные подписки">
+ <rect x="1" y="2" width="18" height="16" rx="4" fill="${level>=1000?"#e0a64d":level>=100?"#9d70e7":"#598fc9"}"/>
+ <path d="M10 4 L12 8 L16 8 L13 11 L14 15 L10 13 L6 15 L7 11 L4 8 L8 8 Z" fill="white"/>
+</svg>`;
+
+const people=[];
+const moderators=[];
 let lastSpeaker=null;
 let messageCount=0;
 let pausedByScroll=false;
 let unreadMessages=0;
-const MAX_MESSAGES_WHEN_FOLLOWING=200;
+let selectedPerson=null;
+let spamBursts=[];
+const MAX_MESSAGES=250;
 const BOTTOM_GAP=90;
 
 function random(arr){
  return arr[Math.floor(Math.random()*arr.length)];
+}
+function chance(value){
+ return Math.random()<value;
+}
+function weightedGift(){
+ let total=giftLevels.reduce((s,x)=>s+x.w,0);
+ let r=Math.random()*total;
+ for(const x of giftLevels){
+  r-=x.w;
+  if(r<=0)return x.n;
+ }
+ return 10;
 }
 function isNearBottom(){
  return chat.scrollHeight-chat.scrollTop-chat.clientHeight<=BOTTOM_GAP;
@@ -134,8 +271,8 @@ function updateNewMessagesButton(){
   newMessagesButton.style.display="none";
  }
 }
-function trimOldMessages(limit=MAX_MESSAGES_WHEN_FOLLOWING){
- while(chat.children.length>limit){
+function trimOldMessages(){
+ while(chat.children.length>MAX_MESSAGES){
   chat.removeChild(chat.firstChild);
  }
 }
@@ -151,32 +288,116 @@ chat.addEventListener("scroll",()=>{
 newMessagesButton.addEventListener("click",()=>{
  pausedByScroll=false;
  unreadMessages=0;
- trimOldMessages();
  updateNewMessagesButton();
  chat.scrollTo({top:chat.scrollHeight,behavior:"smooth"});
 });
 
-function makePeople(){
- people=names.map(name=>({
-  name,
-  color:random(colors),
-  personality:random(personalities).type,
-  activity:Math.random()
- }));
+function assignBadges(person){
+ person.badges=[];
+ if(person.isMod){
+  person.badges.push("mod");
+  if(chance(.7))person.badges.push(random(["sub1","sub5","sub10","sub25"]));
+  return;
+ }
+ if(person.isVIP){
+  person.badges.push("vip");
+ }
+ if(chance(.78)){
+  const count=1+Math.floor(Math.random()*3);
+  const possible=[
+   "sub1","sub5","sub10","sub25","sub50","sub100",
+   "sub150","sub250","sub500","sub1000",
+   "cake","heart","purple","blue","star","game"
+  ];
+  while(person.badges.length<count){
+   const badge=random(possible);
+   if(!person.badges.includes(badge))person.badges.push(badge);
+  }
+ }
+ person.badges=person.badges.slice(0,3);
 }
 
-function addMessage(name,color,text){
+function makePeople(){
+ people.length=0;
+ names.forEach(name=>{
+  const p={
+   name,
+   color:random(colors),
+   personality:random(personalities).type,
+   activity:.2+Math.random()*.8,
+   isVIP:false,
+   isMod:false,
+   isBanned:false,
+   mutedUntil:0,
+   warnings:0,
+   lastText:"",
+   repeatCount:0,
+   badges:[]
+  };
+  assignBadges(p);
+  people.push(p);
+ });
+
+ moderatorNames.forEach((name,i)=>{
+  const p={
+   name,
+   color:["#55c5a5","#7cc77d","#58c9dc"][i],
+   personality:"moderator",
+   activity:.9,
+   isMod:true,
+   isVIP:false,
+   isBanned:false,
+   mutedUntil:0,
+   badges:[]
+  };
+  assignBadges(p);
+  moderators.push(p);
+ });
+}
+
+function badgeHTML(person){
+ return person.badges.map(b=>{
+  if(b==="mod")return `<span class="badge-icon">${modBadge}</span>`;
+  if(b==="vip")return `<span class="badge-icon">${vipBadge}</span>`;
+  if(b.startsWith("sub")){
+   const n=Number(b.slice(3));
+   return `<span class="badge-icon">${subBadge(n)}</span>`;
+  }
+  const icons={
+   cake:"🎂",heart:"💜",purple:"😎",
+   blue:"🐰",star:"⭐",game:"🎮"
+  };
+  return `<span class="gift-badge">${icons[b]||"⭐"}</span>`;
+ }).join("");
+}
+
+function addMessage(person,text,options={}){
  const shouldFollow=!pausedByScroll&&isNearBottom();
  const item=document.createElement("div");
  item.className="msg";
+
+ const badges=document.createElement("span");
+ badges.className="badges";
+ badges.innerHTML=badgeHTML(person);
+
  const nick=document.createElement("span");
  nick.className="name";
- nick.style.color=color;
- nick.textContent=name+":";
+ nick.style.color=person.color;
+ nick.textContent=person.name;
+ nick.addEventListener("click",()=>openProfile(person));
+
  const content=document.createElement("span");
  content.className="text";
- content.textContent=" "+text;
- item.append(nick,content);
+ content.textContent=": "+text;
+
+ item.append(badges,nick,content);
+ if(options.reply){
+  const reply=document.createElement("div");
+  reply.style.color="#aaa";
+  reply.style.fontSize="11px";
+  reply.textContent="↳ ответ пользователю "+options.reply;
+  item.prepend(reply);
+ }
  chat.appendChild(item);
  messageCount++;
 
@@ -190,11 +411,101 @@ function addMessage(name,color,text){
  }
 }
 
+function addSystem(text){
+ const el=document.createElement("div");
+ el.className="system";
+ el.textContent=text;
+ chat.appendChild(el);
+ if(!pausedByScroll&&isNearBottom())chat.scrollTop=chat.scrollHeight;
+}
+
+function addNotice(title,text){
+ const box=document.createElement("div");
+ box.className="notice";
+ const t=document.createElement("div");
+ t.className="notice-title";
+ t.textContent=title;
+ const d=document.createElement("div");
+ d.className="notice-text";
+ d.textContent=text;
+ box.append(t,d);
+ chat.appendChild(box);
+ if(!pausedByScroll&&isNearBottom())chat.scrollTop=chat.scrollHeight;
+ else{
+  pausedByScroll=true;
+  unreadMessages++;
+  updateNewMessagesButton();
+ }
+}
+
+function addGiftBanner(person,count){
+ const box=document.createElement("div");
+ box.className="gift-banner"+(count>=500?" big":"");
+ const row=document.createElement("div");
+ row.className="gift-row";
+ const symbol=document.createElement("span");
+ symbol.className="gift-symbol";
+ symbol.textContent="🎁";
+ const title=document.createElement("div");
+ title.className="gift-title";
+ title.textContent=person.name+" подарил "+count+" подписок!";
+ row.append(symbol,title);
+ const sub=document.createElement("div");
+ sub.className="gift-sub";
+ sub.textContent=count>=1000
+ ?"НЕВЕРОЯТНЫЙ ПОДАРОК! Спасибо за поддержку!"
+ :"Спасибо за подарочные подписки!";
+ box.append(row,sub);
+ chat.appendChild(box);
+ if(!pausedByScroll&&isNearBottom())chat.scrollTop=chat.scrollHeight;
+ else{
+  pausedByScroll=true;
+  unreadMessages++;
+  updateNewMessagesButton();
+ }
+}
+
+function openProfile(person){
+ selectedPerson=person;
+ document.getElementById("profileName").textContent=person.name;
+ document.getElementById("profileBadges").innerHTML=badgeHTML(person);
+ document.getElementById("profileInfo").textContent=
+  person.isMod?"Модератор чата":
+  person.isVIP?"VIP-зритель":
+  "Зритель трансляции";
+ const button=document.getElementById("vipButton");
+ button.style.display=person.isMod?"none":"inline-block";
+ button.textContent=person.isVIP?"Снять VIP":"Назначить VIP";
+ document.getElementById("profile").style.display="block";
+}
+
+document.getElementById("closeProfile").onclick=()=>{
+ document.getElementById("profile").style.display="none";
+};
+
+document.getElementById("vipButton").onclick=()=>{
+ if(!selectedPerson||selectedPerson.isMod)return;
+ selectedPerson.isVIP=!selectedPerson.isVIP;
+ selectedPerson.badges=selectedPerson.badges.filter(b=>b!=="vip");
+ if(selectedPerson.isVIP){
+  selectedPerson.badges.unshift("vip");
+ }
+ selectedPerson.badges=selectedPerson.badges.slice(0,3);
+ addNotice(
+  "VIP-СТАТУС",
+  selectedPerson.name+(selectedPerson.isVIP?" получил VIP!":" больше не VIP.")
+ );
+ openProfile(selectedPerson);
+};
+
 function getPerson(){
- let available=people.filter(p=>Math.random()<p.activity+0.15);
- if(!available.length)available=people;
+ let available=people.filter(p=>
+  !p.isBanned&&Date.now()>p.mutedUntil&&chance(p.activity)
+ );
+ if(!available.length)available=people.filter(p=>!p.isBanned&&Date.now()>p.mutedUntil);
+ if(!available.length)return null;
  let person=random(available);
- if(lastSpeaker&&Math.random()<0.35){
+ if(lastSpeaker&&chance(.35)){
   const others=available.filter(p=>p!==lastSpeaker);
   if(others.length)person=random(others);
  }
@@ -205,56 +516,169 @@ function getPerson(){
 function createMessage(person){
  const type=person.personality;
  let text;
- if(Math.random()<0.18){
-  text=random(streamerPhrases);
- }
- else if(Math.random()<0.16){
-  text=random(spam);
- }
- else{
-  text=random(phrases[type]);
- }
- if(Math.random()<0.16){
+ if(chance(.18))text=random(streamerPhrases);
+ else if(chance(.16))text=random(spam);
+ else text=random(phrases[type]||phrases.normal);
+
+ if(chance(.16)){
   const other=random(people);
-  if(other!==person){
-   text=random(reactions).replace("NAME",other.name);
-  }
+  if(other!==person)text=random(reactions).replace("NAME",other.name);
  }
- if(Math.random()<0.10){
-  text=random(phrases.memer);
- }
+ if(chance(.10))text=random(phrases.memer);
  return text;
+}
+
+function checkSpam(person,text){
+ if(person.isMod)return;
+ if(text===person.lastText){
+  person.repeatCount++;
+ }else{
+  person.lastText=text;
+  person.repeatCount=1;
+ }
+ if(person.repeatCount===4){
+  person.warnings++;
+  const mod=random(moderators);
+  addMessage(mod,"⚠️ "+person.name+", предупреждение: не спамь одинаковыми сообщениями.",{reply:person.name});
+  person.lastText="";
+  person.repeatCount=0;
+  person.warned=true;
+ }else if(person.repeatCount>=3&&person.warned){
+  punishPerson(person);
+ }
+}
+
+function punishPerson(person){
+ if(person.isBanned)return;
+ const mod=random(moderators);
+ const ban=chance(.35);
+ if(ban){
+  person.isBanned=true;
+  addMessage(mod,"⛔ "+person.name+" получил бан за повторный спам.",{reply:person.name});
+  addSystem(person.name+" больше не может писать в чате.");
+ }else{
+  const minutes=1+Math.floor(Math.random()*5);
+  person.mutedUntil=Date.now()+minutes*60000;
+  addMessage(mod,"🔇 "+person.name+" получил мут на "+minutes+" мин. за спам.",{reply:person.name});
+ }
+ person.warned=false;
+ person.repeatCount=0;
 }
 
 function sendRandomMessage(){
  const person=getPerson();
- addMessage(person.name,person.color,createMessage(person));
+ if(!person)return;
+ let text=createMessage(person);
+ addMessage(person,text);
+ checkSpam(person,text);
 }
+
+function sendSpamBurst(){
+ const person=getPerson();
+ if(!person)return;
+ const text=random(spam);
+ let count=3+Math.floor(Math.random()*2);
+ let sent=0;
+ const timer=setInterval(()=>{
+  if(person.isBanned||Date.now()<person.mutedUntil){
+   clearInterval(timer);
+   return;
+  }
+  addMessage(person,text);
+  checkSpam(person,text);
+  sent++;
+  if(sent>=count)clearInterval(timer);
+ },350);
+}
+
+function sendModeratorMessage(){
+ const mod=random(moderators);
+ const text=chance(.55)?random(moderatorPhrases):random(advicePhrases);
+ addMessage(mod,text);
+}
+
+function sendGiftEvent(){
+ const person=getPerson();
+ if(!person)return;
+ const count=weightedGift();
+ addGiftBanner(person,count);
+ let sent=0;
+ const interval=setInterval(()=>{
+  const recipient=random(people);
+  addMessage(person,"подарил подписку пользователю "+recipient.name+"!");
+  sent++;
+  if(sent>=count)clearInterval(interval);
+ },count>=100?25:130);
+}
+
+function sendKnownStreamer(){
+ const name=random(knownStreamers);
+ const p={
+  name,
+  color:"#c49aff",
+  personality:"normal",
+  badges:[],
+  isVIP:false,
+  isMod:false
+ };
+ const text=random([
+  "Всем привет!","Макс, хорошая трансляция!",
+  "АХАХАХАХ","давно не заходил",
+  "что тут происходит?","хороший момент!",
+  "чат сегодня активный"
+ ]);
+ const item=document.createElement("div");
+ item.className="msg";
+ const nick=document.createElement("span");
+ nick.className="name";
+ nick.style.color=p.color;
+ nick.textContent=name;
+ const check=document.createElement("span");
+ check.className="verified";
+ check.textContent=" ✓";
+ const content=document.createElement("span");
+ content.className="text";
+ content.textContent=": "+text;
+ item.append(nick,check,content);
+ const shouldFollow=!pausedByScroll&&isNearBottom();
+ chat.appendChild(item);
+ if(shouldFollow)chat.scrollTop=chat.scrollHeight;
+ else{
+  pausedByScroll=true;
+  unreadMessages++;
+  updateNewMessagesButton();
+ }
+}
+
 function updateStats(){
- let count=1284+Math.floor(Math.random()*90)-30;
+ const count=1284+Math.floor(Math.random()*90)-30;
  viewers.textContent=count.toLocaleString("ru-RU");
- online.textContent=(65+Math.floor(Math.random()*50));
+ online.textContent=65+Math.floor(Math.random()*50);
 }
+
 function nextMessage(){
- sendRandomMessage();
- let delay=500+Math.random()*1900;
- if(Math.random()<0.15){delay=150+Math.random()*400;}
- if(Math.random()<0.12){delay=2500+Math.random()*2500;}
+ if(chance(.09))sendSpamB
+ function nextMessage(){
+ if(chance(.09))sendSpamBurst();
+ else sendRandomMessage();
+
+ if(chance(.025))sendModeratorMessage();
+ if(chance(.012))sendGiftEvent();
+ if(chance(.006))sendKnownStreamer();
+
+ updateStats();
+
+ const delay=650+Math.random()*900;
  setTimeout(nextMessage,delay);
 }
-function start(){
- makePeople();
- chat.innerHTML="";
- addMessage("StreamLife","#ff7777","Чат подключен. Всем привет!");
- updateStats();
- chat.scrollTop=chat.scrollHeight;
- for(let i=0;i<7;i++){
-  setTimeout(sendRandomMessage,i*350);
- }
- setInterval(updateStats,7000);
- setTimeout(nextMessage,1800);
-}
-start();
+
+makePeople();
+updateStats();
+addSystem("Чат подключён. Добро пожаловать!");
+
+setTimeout(nextMessage,1000);
+
+setInterval(updateStats,7000);
 </script>
 </body>
 </html>
