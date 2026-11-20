@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -7,23 +6,25 @@
 <title>Stream Life — Live Chat</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#090a0e;color:#eee;font-family:Arial,sans-serif;height:100dvh;display:flex;flex-direction:column}
-header{background:#15171e;padding:15px 17px;border-bottom:1px solid #292c35}
+body{margin:0;background:#090a0e;color:#eee;font-family:Arial,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#15171e;padding:15px 17px;border-bottom:1px solid #292c35;flex-shrink:0}
 .top{display:flex;align-items:center;justify-content:space-between}
 h2{font-size:19px;margin:0}
 .live{color:#ff5555;font-size:12px;font-weight:bold}
 .stats{font-size:12px;color:#999;margin-top:9px}
-#chat{flex:1;overflow-y:auto;padding:12px 13px;display:flex;flex-direction:column;gap:10px}
+.chat-area{position:relative;flex:1;min-height:0}
+#chat{height:100%;overflow-y:auto;overscroll-behavior:contain;padding:12px 13px 18px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:#414552 transparent}
 .msg{font-size:14px;line-height:1.4;overflow-wrap:anywhere;animation:appear .18s ease}
 .name{font-weight:bold;margin-right:5px}
 .text{color:#e4e4e8}
 .system{text-align:center;color:#777;font-size:12px;padding:8px}
-footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#777;font-size:11px}
+footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#777;font-size:11px;flex-shrink:0}
+#newMessages{display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;border:1px solid #565d70;border-radius:22px;background:#303747;color:#fff;padding:11px 17px;font-size:13px;font-weight:bold;box-shadow:0 4px 18px #0009;white-space:nowrap;max-width:calc(100% - 24px)}
+#newMessages:active{background:#414c63}
 @keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-
 <header>
 <div class="top">
 <h2>STREAM LIFE</h2>
@@ -34,9 +35,12 @@ footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#
 </div>
 </header>
 
+<div class="chat-area">
 <main id="chat">
 <div class="system">Подключение зрителей...</div>
 </main>
+<button id="newMessages" type="button">↓ Новых сообщений: 0</button>
+</div>
 
 <footer>Чат трансляции · Сообщения генерируются автоматически</footer>
 
@@ -44,7 +48,7 @@ footer{background:#15171e;border-top:1px solid #292c35;padding:10px 14px;color:#
 const chat=document.getElementById("chat");
 const viewers=document.getElementById("viewers");
 const online=document.getElementById("online");
-
+const newMessagesButton=document.getElementById("newMessages");
 const names=[
 "shadow","Keksik","Demon_228","MisterFox","vlad_ua",
 "NightWolf","Limon","Maxwell","qwerty","oldman",
@@ -58,7 +62,6 @@ const colors=[
 ];
 
 const streamerNames=["Макс","Максим","Сицилия"];
-
 const personalities=[
 {type:"memer",chance:25},
 {type:"normal",chance:25},
@@ -67,128 +70,94 @@ const personalities=[
 {type:"quiet",chance:10},
 {type:"newbie",chance:10}
 ];
-
 const phrases={
 memer:[
-"АХАХАХАХАХА",
-"ОРУУУУ",
-"ХАХАХАХА ЧТО",
-"я не могу просто",
-"это было сильно ахах",
-"ХВХВХВХВХ",
-"ну всё приехали",
-"бля ахахах",
-"ахахах ну хорош"
+"АХАХАХАХАХА","ОРУУУУ","ХАХАХАХА ЧТО","я не могу просто",
+"это было сильно ахах","ХВХВХВХВХ","ну всё приехали","бля ахахах","ахахах ну хорош"
 ],
 normal:[
-"игра вроде норм",
-"а мне нравится если честно",
-"ребят кто давно смотрит?",
-"что сейчас произошло?",
-"нормально вообще",
-"я только зашел",
-"кто-нибудь понял что происходит?",
-"интересно чем закончится",
-"музыка прикольная кстати"
+"игра вроде норм","а мне нравится если честно","ребят кто давно смотрит?",
+"что сейчас произошло?","нормально вообще","я только зашел","кто-нибудь понял что происходит?",
+"интересно чем закончится","музыка прикольная кстати"
 ],
 toxic:[
-"бля ну куда ты пошел",
-"ну это вообще что было",
-"ты серьезно сейчас?",
-"да ну нахер ахах",
-"брат ну соберись",
-"это был худший момент",
-"я в шоке с тебя",
-"ну ты и выдал конечно",
-"ДА КАК ТАК МОЖНО"
+"бля ну куда ты пошел","ну это вообще что было","ты серьезно сейчас?",
+"да ну нахер ахах","брат ну соберись","это был худший момент","я в шоке с тебя",
+"ну ты и выдал конечно","ДА КАК ТАК МОЖНО"
 ],
 active:[
-"МАКС СЛЕВА",
-"посмотри назад",
-"ДА ДА ДА",
-"НЕЕЕЕТ АХАХА",
-"вот сейчас будет интересно",
-"МАКС НЕ НАДО",
-"ЧАТ ВИДЕЛИ ЭТО?",
-"го еще раз",
-"ВОТ ЭТО ПОВОРОТ"
+"МАКС СЛЕВА","посмотри назад","ДА ДА ДА","НЕЕЕЕТ АХАХА",
+"вот сейчас будет интересно","МАКС НЕ НАДО","ЧАТ ВИДЕЛИ ЭТО?","го еще раз","ВОТ ЭТО ПОВОРОТ"
 ],
-quiet:[
-"ахах",
-"жесть",
-"понятно)",
-"ого",
-"хах",
-"ну да",
-"бывает",
-"лол",
-"кек"
-],
+quiet:["ахах","жесть","понятно)","ого","хах","ну да","бывает","лол","кек"],
 newbie:[
-"а что за игра?",
-"только зашел что происходит",
-"сколько стриму уже?",
-"а это прохождение?",
-"привет всем",
-"Макс давно играешь в это?",
-"кто-нибудь объяснит?"
+"а что за игра?","только зашел что происходит","сколько стриму уже?",
+"а это прохождение?","привет всем","Макс давно играешь в это?","кто-нибудь объяснит?"
 ]
 };
-
 const streamerPhrases=[
-"Макс, ну куда ты пошел?",
-"Максим, ты это видел вообще?",
-"Сицилия, посмотри назад",
-"Макс, ответь чату",
-"ахахах Максим ну ты даешь",
-"Сицилия, это что сейчас было",
-"Макс, НЕ ТУДА",
-"Максим, я тебе уже писал",
-"ну Макс конечно",
-"Сицилия ахахахах",
-"Макс, ты серьезно?",
-"Максим, соберись",
-"Макс, куда ты бежишь блять",
-"Сицилия, ну хорош",
-"Макс, чат в шоке"
+"Макс, ну куда ты пошел?","Максим, ты это видел вообще?","Сицилия, посмотри назад",
+"Макс, ответь чату","ахахах Максим ну ты даешь","Сицилия, это что сейчас было",
+"Макс, НЕ ТУДА","Максим, я тебе уже писал","ну Макс конечно","Сицилия ахахахах",
+"Макс, ты серьезно?","Максим, соберись","Макс, куда ты бежишь блять",
+"Сицилия, ну хорош","Макс, чат в шоке"
 ];
-
 const reactions=[
-"@NAME ахахах",
-"@NAME да я тоже заметил",
-"@NAME ну ты прав",
-"@NAME да ладно тебе",
-"@NAME ХАХАХА",
-"@NAME не согласен вообще",
-"@NAME +++",
-"@NAME вот именно",
-"@NAME ты о чем вообще",
-"@NAME хорош"
+"@NAME ахахах","@NAME да я тоже заметил","@NAME ну ты прав","@NAME да ладно тебе",
+"@NAME ХАХАХА","@NAME не согласен вообще","@NAME +++","@NAME вот именно",
+"@NAME ты о чем вообще","@NAME хорош"
 ];
-
 const spam=[
-"ХАХАХАХАХАХАХА",
-"ЫВХЫВХЫВХЫВ",
-"ПХАХАХАХАХ",
-"????????????",
-"ЧТООООООО",
-"))))))))))))",
-"КЕКЕКЕКЕК",
-"ЛОООООООЛ",
-"ДА БЛЯЯЯЯ",
-"ахахахахахахах"
+"ХАХАХАХАХАХАХА","ЫВХЫВХЫВХЫВ","ПХАХАХАХАХ","????????????",
+"ЧТООООООО","))))))))))))","КЕКЕКЕКЕК","ЛОООООООЛ","ДА БЛЯЯЯЯ","ахахахахахахах"
 ];
 
 let people=[];
 let lastSpeaker=null;
 let messageCount=0;
+let pausedByScroll=false;
+let unreadMessages=0;
+const MAX_MESSAGES_WHEN_FOLLOWING=200;
+const BOTTOM_GAP=90;
 
 function random(arr){
  return arr[Math.floor(Math.random()*arr.length)];
 }
+function isNearBottom(){
+ return chat.scrollHeight-chat.scrollTop-chat.clientHeight<=BOTTOM_GAP;
+}
+function updateNewMessagesButton(){
+ if(unreadMessages>0){
+  newMessagesButton.textContent="↓ Новых сообщений: "+unreadMessages;
+  newMessagesButton.style.display="block";
+ }else{
+  newMessagesButton.style.display="none";
+ }
+}
+function trimOldMessages(limit=MAX_MESSAGES_WHEN_FOLLOWING){
+ while(chat.children.length>limit){
+  chat.removeChild(chat.firstChild);
+ }
+}
+
+chat.addEventListener("scroll",()=>{
+ if(isNearBottom()){
+  pausedByScroll=false;
+  unreadMessages=0;
+  updateNewMessagesButton();
+ }
+});
+
+newMessagesButton.addEventListener("click",()=>{
+ pausedByScroll=false;
+ unreadMessages=0;
+ trimOldMessages();
+ updateNewMessagesButton();
+ chat.scrollTo({top:chat.scrollHeight,behavior:"smooth"});
+});
 
 function makePeople(){
- people=names.map((name,i)=>({
+ people=names.map(name=>({
   name,
   color:random(colors),
   personality:random(personalities).type,
@@ -197,42 +166,38 @@ function makePeople(){
 }
 
 function addMessage(name,color,text){
+ const shouldFollow=!pausedByScroll&&isNearBottom();
  const item=document.createElement("div");
  item.className="msg";
-
  const nick=document.createElement("span");
  nick.className="name";
  nick.style.color=color;
  nick.textContent=name+":";
-
  const content=document.createElement("span");
  content.className="text";
  content.textContent=" "+text;
-
  item.append(nick,content);
  chat.appendChild(item);
-
  messageCount++;
 
- while(chat.children.length>100){
-  chat.removeChild(chat.firstChild);
+ if(shouldFollow){
+  trimOldMessages();
+  chat.scrollTop=chat.scrollHeight;
+ }else{
+  pausedByScroll=true;
+  unreadMessages++;
+  updateNewMessagesButton();
  }
-
- chat.scrollTop=chat.scrollHeight;
 }
 
 function getPerson(){
  let available=people.filter(p=>Math.random()<p.activity+0.15);
-
  if(!available.length)available=people;
-
  let person=random(available);
-
  if(lastSpeaker&&Math.random()<0.35){
   const others=available.filter(p=>p!==lastSpeaker);
   if(others.length)person=random(others);
  }
-
  lastSpeaker=person;
  return person;
 }
@@ -240,7 +205,6 @@ function getPerson(){
 function createMessage(person){
  const type=person.personality;
  let text;
-
  if(Math.random()<0.18){
   text=random(streamerPhrases);
  }
@@ -250,18 +214,15 @@ function createMessage(person){
  else{
   text=random(phrases[type]);
  }
-
  if(Math.random()<0.16){
   const other=random(people);
   if(other!==person){
    text=random(reactions).replace("NAME",other.name);
   }
  }
-
  if(Math.random()<0.10){
   text=random(phrases.memer);
  }
-
  return text;
 }
 
@@ -269,43 +230,30 @@ function sendRandomMessage(){
  const person=getPerson();
  addMessage(person.name,person.color,createMessage(person));
 }
-
 function updateStats(){
  let count=1284+Math.floor(Math.random()*90)-30;
  viewers.textContent=count.toLocaleString("ru-RU");
  online.textContent=(65+Math.floor(Math.random()*50));
 }
-
 function nextMessage(){
  sendRandomMessage();
-
  let delay=500+Math.random()*1900;
-
- if(Math.random()<0.15){
-  delay=150+Math.random()*400;
- }
-
- if(Math.random()<0.12){
-  delay=2500+Math.random()*2500;
- }
-
+ if(Math.random()<0.15){delay=150+Math.random()*400;}
+ if(Math.random()<0.12){delay=2500+Math.random()*2500;}
  setTimeout(nextMessage,delay);
 }
-
 function start(){
  makePeople();
  chat.innerHTML="";
  addMessage("StreamLife","#ff7777","Чат подключен. Всем привет!");
  updateStats();
-
+ chat.scrollTop=chat.scrollHeight;
  for(let i=0;i<7;i++){
   setTimeout(sendRandomMessage,i*350);
  }
-
  setInterval(updateStats,7000);
  setTimeout(nextMessage,1800);
 }
-
 start();
 </script>
 </body>
